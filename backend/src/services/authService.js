@@ -46,7 +46,14 @@ class AuthService {
       throw err;
     }
 
-    // 2. Email uniqueness check
+    // 2. Password strength validation — minimum 8 characters required
+    if (!password || password.length < 8) {
+      const err = new Error("Password must be at least 8 characters long.");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    // 3. Email uniqueness check
     const existing = store.users.find(u => u.email === normalizedEmail);
     if (existing) {
       const err = new Error("An account with this email address already exists.");
@@ -54,10 +61,10 @@ class AuthService {
       throw err;
     }
 
-    // 3. Password hashing
+    // 4. Password hashing (bcrypt with cost factor 10)
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 4. Create User Record
+    // 5. Create User Record
     store.counters.users += 1;
     const newUser = {
       id: store.counters.users,
