@@ -3,9 +3,12 @@
  * @description Centralized REST API client for backend communication.
  * Automatically injects the Authorization header with Bearer JWT if present in localStorage,
  * serializes JSON payloads, and normalizes errors.
+ *
+ * API base URL is read from VITE_API_BASE_URL environment variable (set in .env).
+ * Falls back to localhost:5000 for local development if the variable is not set.
  */
 
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
 /**
  * Dispatches an HTTP request to the backend API.
