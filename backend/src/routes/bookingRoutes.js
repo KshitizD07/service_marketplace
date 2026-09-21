@@ -24,9 +24,10 @@ router.post(
 // Get bookings (filtered by user session)
 router.get('/', BookingController.getBookings);
 
-// Update booking status (Provider or Admin)
+// Update booking status (Provider or Admin only — defense in depth: role also enforced in service)
 router.put(
   '/:id/status',
+  requireRole('provider', 'admin'),
   requireBodyFields(['status']),
   BookingController.updateStatus
 );
