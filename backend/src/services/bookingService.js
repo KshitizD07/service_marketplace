@@ -180,6 +180,7 @@ class BookingService {
         address: b.address,
         notes: b.notes,
         status: b.status,
+        is_reviewed: store.reviews.some(r => r.booking_id === b.id), // true if a review has already been submitted for this booking
         created_at: b.created_at
       };
     });
