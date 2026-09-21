@@ -40,6 +40,10 @@ class AdminController {
    */
   static async toggleUserStatus(req, res, next) {
     try {
+      // Prevent admin from deactivating their own account — would cause immediate lockout
+      if (parseInt(req.params.id, 10) === req.user.id) {
+        return ApiResponse.error(res, "Administrators cannot deactivate their own account.", 400);
+      }
       const result = await AdminService.toggleUserStatus(req.params.id, req.body.status);
       return ApiResponse.success(res, result, "User account status updated successfully.");
     } catch (error) {
