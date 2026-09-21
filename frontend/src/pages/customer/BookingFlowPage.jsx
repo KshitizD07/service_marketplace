@@ -222,36 +222,42 @@ export default function BookingFlowPage() {
             Showing dates for the next 2 weeks matching provider operating hours.
           </p>
 
-          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 6 }}>
-            {availableDays.map((d) => {
-              const isSelected = selectedDate?.date === d.date;
+          {availableDays.length === 0 ? (
+            <p style={{ color: '#A6432B', fontSize: '0.88rem', marginTop: 8, fontWeight: 600 }}>
+              ⚠️ This provider has no available dates in the next 14 days. Please check back later or contact them directly.
+            </p>
+          ) : (
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 6 }}>
+              {availableDays.map((d) => {
+                const isSelected = selectedDate?.date === d.date;
 
-              return (
-                <button
-                  type="button"
-                  key={d.date}
-                  onClick={() => { setSelectedDate(d); setSelectedTime(null); }}
-                  style={{
-                    padding: '10px 14px',
-                    borderRadius: 12,
-                    border: `1.5px solid ${isSelected ? '#1F6E5E' : '#CFC6B2'}`,
-                    background: isSelected ? '#1F6E5E' : '#FFFFFF',
-                    color: isSelected ? '#FBFAF6' : '#1B1F1C',
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    flexShrink: 0
-                  }}
-                >
-                  <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', opacity: 0.8, fontWeight: 700 }}>
-                    {d.dayName.slice(0, 3)}
-                  </div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 800, marginTop: 2 }}>
-                    {d.label.split(' ')[1]} {d.label.split(' ')[2]}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+                return (
+                  <button
+                    type="button"
+                    key={d.date}
+                    onClick={() => { setSelectedDate(d); setSelectedTime(null); }}
+                    style={{
+                      padding: '10px 14px',
+                      borderRadius: 12,
+                      border: `1.5px solid ${isSelected ? '#1F6E5E' : '#CFC6B2'}`,
+                      background: isSelected ? '#1F6E5E' : '#FFFFFF',
+                      color: isSelected ? '#FBFAF6' : '#1B1F1C',
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      flexShrink: 0
+                    }}
+                  >
+                    <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', opacity: 0.8, fontWeight: 700 }}>
+                      {d.dayName.slice(0, 3)}
+                    </div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 800, marginTop: 2 }}>
+                      {d.label.split(' ')[1]} {d.label.split(' ')[2]}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Step 3: Select Time Slot */}
