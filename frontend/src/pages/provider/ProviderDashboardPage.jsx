@@ -59,16 +59,18 @@ export default function ProviderDashboardPage() {
         if (provRes.success && provRes.data) {
           setProviderProfile(provRes.data);
 
-          // Populate schedule state from provider availability
-          if (provRes.data.availability) {
+          // Populate schedule state from provider's saved availability using real start/end times
+          if (provRes.data.availability && provRes.data.rawSchedule) {
             setScheduleState(DAYS_OF_WEEK.map(day => {
               const slots = provRes.data.availability[day];
               const isEnabled = Array.isArray(slots) && slots.length > 0;
+              // Use rawSchedule for real saved times — fixes BL-2 (form always reset to 09:00/17:00)
+              const rawDay = provRes.data.rawSchedule[day];
               return {
                 dayOfWeek: day,
                 enabled: isEnabled,
-                startTime: isEnabled ? "09:00" : "09:00",
-                endTime: isEnabled ? "17:00" : "17:00"
+                startTime: rawDay?.startTime || "09:00",
+                endTime: rawDay?.endTime || "17:00"
               };
             }));
           }
