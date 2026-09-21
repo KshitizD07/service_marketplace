@@ -8,11 +8,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard, Users, Settings, Calendar, MessageSquare,
-  DollarSign, Briefcase, Plus, Pencil, Trash2, UserCheck, UserX
+  DollarSign, Briefcase, Plus, Pencil, Trash2, UserCheck, UserX, Check, X
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import * as adminService from '../../services/adminService';
 import * as bookingService from '../../services/bookingService';
+import * as providerService from '../../services/providerService'; // FE-3: needed to fetch full category list
 import { useToast } from '../../context/ToastContext';
 import StatusPill from '../../components/common/StatusPill';
 import StarRating from '../../components/common/StarRating';
@@ -34,28 +35,32 @@ export default function AdminDashboardPage() {
   const [newCatName, setNewCatName] = useState('');
   const [newCatDesc, setNewCatDesc] = useState('');
 
+  // FE-4: Inline category edit state (replaces window.prompt)
+  const [editingCategory, setEditingCategory] = useState(null); // { id, name, description }
+  const [editName, setEditName] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+
   // Booking Status Filter
   const [bookingFilter, setBookingFilter] = useState('all');
 
   const loadAdminData = async () => {
     setLoading(true);
     try {
-      const [statsRes, usersRes, bookingsRes, reviewsRes] = await Promise.all([
+      // FE-3: Fetch full category list from /api/categories so description is available for editing
+      const [statsRes, usersRes, bookingsRes, reviewsRes, catsRes] = await Promise.all([
         adminService.getStats(),
         adminService.getUsers(),
         bookingService.getBookings(),
-        adminService.getAllReviews()
+        adminService.getAllReviews(),
+        providerService.getCategories()
       ]);
 
       if (statsRes.success) setStats(statsRes.data);
       if (usersRes.success) setUsers(usersRes.data || []);
       if (bookingsRes.success) setBookings(bookingsRes.data || []);
       if (reviewsRes.success) setReviews(reviewsRes.data || []);
-
-      // Derive categories from stats or endpoint
-      if (statsRes.data?.categorySplit) {
-        setCategories(statsRes.data.categorySplit);
-      }
+      // Use full category list (with description) instead of bare categorySplit from stats
+      if (catsRes.success) setCategories(catsRes.data || []);
     } catch (err) {
       addToast("Failed to load administration data.", "error");
     } finally {
@@ -98,19 +103,33 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Handle Edit Category
-  const handleEditCategory = async (cat) => {
-    const newName = window.prompt("Enter updated category title:", cat.name);
-    if (!newName || !newName.trim()) return;
+  // FE-4: Open inline edit form for a category
+  const handleStartEditCategory = (cat) => {
+    setEditingCategory(cat);
+    setEditName(cat.name);
+    setEditDesc(cat.description || '');
+  };
 
-    const newDesc = window.prompt("Enter updated description:", cat.description || "");
+  // FE-4: Cancel inline edit without saving
+  const handleCancelEditCategory = () => {
+    setEditingCategory(null);
+    setEditName('');
+    setEditDesc('');
+  };
 
+  // FE-4: Save inline category edits (replaces window.prompt)
+  const handleSaveEditCategory = async (catId) => {
+    if (!editName.trim()) {
+      addToast("Category name cannot be empty.", "error");
+      return;
+    }
     try {
-      await adminService.updateCategory(cat.id, {
-        name: newName.trim(),
-        description: newDesc ? newDesc.trim() : ""
+      await adminService.updateCategory(catId, {
+        name: editName.trim(),
+        description: editDesc.trim()
       });
       addToast("Category updated successfully.", "success");
+      setEditingCategory(null);
       loadAdminData();
     } catch (err) {
       addToast(err.message || "Failed to update category.", "error");
@@ -440,39 +459,87 @@ export default function AdminDashboardPage() {
                 <thead>
                   <tr style={{ background: '#FAF8F5', borderBottom: '1.5px solid #E1DACB' }}>
                     <th style={{ padding: '12px 16px', fontWeight: 700 }}>Category Name</th>
-                    <th style={{ padding: '12px 16px', fontWeight: 700 }}>Providers Assigned</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 700 }}>Description</th>
                     <th style={{ padding: '12px 16px', fontWeight: 700 }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {categories.map((c) => (
-                    <tr key={c.id} style={{ borderBottom: '1px solid #E1DACB' }}>
-                      <td style={{ padding: '12px 16px' }}>
-                        <div style={{ fontWeight: 700, color: '#1B1F1C' }}>{c.name}</div>
-                      </td>
-                      <td style={{ padding: '12px 16px' }}>
-                        {c.providers || 0} provider(s)
-                      </td>
-                      <td style={{ padding: '12px 16px' }}>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <button
-                            onClick={() => handleEditCategory(c)}
-                            title="Edit"
-                            style={{ background: 'transparent', border: '1px solid #CFC6B2', borderRadius: 6, padding: '5px 8px', cursor: 'pointer' }}
-                          >
-                            <Pencil size={13} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteCategory(c.id)}
-                            title="Delete"
-                            style={{ background: 'transparent', border: '1px solid #A6432B', color: '#A6432B', borderRadius: 6, padding: '5px 8px', cursor: 'pointer' }}
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {categories.map((c) => {
+                    const isEditingThis = editingCategory?.id === c.id;
+
+                    return (
+                      <tr key={c.id} style={{ borderBottom: '1px solid #E1DACB' }}>
+                        <td style={{ padding: '12px 16px' }}>
+                          {isEditingThis ? (
+                            // FE-4: Inline name input replaces window.prompt
+                            <input
+                              type="text"
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1.5px solid #1F6E5E', fontSize: '0.88rem' }}
+                              autoFocus
+                            />
+                          ) : (
+                            <div style={{ fontWeight: 700, color: '#1B1F1C' }}>{c.name}</div>
+                          )}
+                        </td>
+                        <td style={{ padding: '12px 16px', color: '#8D8577', fontSize: '0.84rem' }}>
+                          {isEditingThis ? (
+                            // FE-4: Inline description input replaces second window.prompt
+                            <input
+                              type="text"
+                              value={editDesc}
+                              onChange={(e) => setEditDesc(e.target.value)}
+                              placeholder="Category description (optional)"
+                              style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #CFC6B2', fontSize: '0.84rem' }}
+                            />
+                          ) : (
+                            c.description || '—'
+                          )}
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            {isEditingThis ? (
+                              <>
+                                {/* Save and Cancel buttons for inline edit */}
+                                <button
+                                  onClick={() => handleSaveEditCategory(c.id)}
+                                  title="Save"
+                                  style={{ background: '#1F6E5E', border: 0, color: '#FBFAF6', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.78rem', fontWeight: 700 }}
+                                >
+                                  <Check size={13} /> Save
+                                </button>
+                                <button
+                                  onClick={handleCancelEditCategory}
+                                  title="Cancel"
+                                  style={{ background: 'transparent', border: '1px solid #CFC6B2', borderRadius: 6, padding: '5px 8px', cursor: 'pointer' }}
+                                >
+                                  <X size={13} />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => handleStartEditCategory(c)}
+                                  title="Edit"
+                                  style={{ background: 'transparent', border: '1px solid #CFC6B2', borderRadius: 6, padding: '5px 8px', cursor: 'pointer' }}
+                                >
+                                  <Pencil size={13} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteCategory(c.id)}
+                                  title="Delete"
+                                  style={{ background: 'transparent', border: '1px solid #A6432B', color: '#A6432B', borderRadius: 6, padding: '5px 8px', cursor: 'pointer' }}
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
