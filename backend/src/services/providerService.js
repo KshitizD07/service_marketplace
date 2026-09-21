@@ -10,7 +10,8 @@ const { generateHourlySlots, to24HourTime } = require('../utils/timeHelper');
 
 class ProviderService {
   /**
-   * Helper that builds availability dictionary ({ "Monday": ["9:00 AM", ...] }) for a provider.
+   * Helper that builds availability display-slot map ({ "Monday": ["9:00 AM", ...] }) for a provider.
+   * Used by the booking flow and provider profile page.
    * @param {number} providerId
    * @returns {Object<string, string[]>}
    */
@@ -26,6 +27,24 @@ class ProviderService {
       }
     });
 
+    return map;
+  }
+
+  /**
+   * Helper that builds a raw schedule map ({ "Monday": { startTime: "09:00", endTime: "17:00" } }) for a provider.
+   * Used by the provider dashboard to repopulate time inputs with real saved values.
+   * @param {number} providerId
+   * @returns {Object<string, {startTime: string, endTime: string}>}
+   */
+  static _buildRawSchedule(providerId) {
+    const slots = store.availability.filter(a => a.provider_id === providerId);
+    const map = {};
+    slots.forEach(s => {
+      map[s.day_of_week] = {
+        startTime: s.start_time.slice(0, 5), // "09:00" trimmed from "09:00:00"
+        endTime: s.end_time.slice(0, 5)
+      };
+    });
     return map;
   }
 
@@ -114,6 +133,7 @@ class ProviderService {
     const cat = store.categories.find(c => c.id === p.category_id) || {};
     const services = store.services.filter(s => s.provider_id === p.id);
     const availability = this._buildAvailabilityMap(p.id);
+    const rawSchedule = this._buildRawSchedule(p.id); // raw start/end times for dashboard form repopulation
 
     // Load REAL reviews attached to this provider from our store (resolving Bug #6)
     const reviews = store.reviews
@@ -145,6 +165,7 @@ class ProviderService {
       category_name: cat.name || "General",
       services,
       availability,
+      rawSchedule, // includes { "Monday": { startTime: "09:00", endTime: "17:00" }, ... }
       reviews
     };
   }
@@ -191,17 +212,29 @@ class ProviderService {
     // Clear existing schedule for this provider
     store.availability = store.availability.filter(a => a.provider_id !== providerId);
 
-    // Insert new schedule rows
-    schedule.forEach(slot => {
+    // Insert new schedule rows, validating each shift before saving
+    for (const slot of schedule) {
+      const startNorm = to24HourTime(slot.startTime);
+      const endNorm = to24HourTime(slot.endTime);
+
+      // CQ-3 fix: ensure start time is strictly before end time
+      if (startNorm >= endNorm) {
+        const err = new Error(
+          `Invalid shift for ${slot.dayOfWeek}: start time (${slot.startTime}) must be before end time (${slot.endTime}).`
+        );
+        err.statusCode = 400;
+        throw err;
+      }
+
       store.counters.availability += 1;
       store.availability.push({
         id: store.counters.availability,
         provider_id: providerId,
         day_of_week: slot.dayOfWeek,
-        start_time: to24HourTime(slot.startTime),
-        end_time: to24HourTime(slot.endTime)
+        start_time: startNorm,
+        end_time: endNorm
       });
-    });
+    }
 
     return this._buildAvailabilityMap(providerId);
   }
