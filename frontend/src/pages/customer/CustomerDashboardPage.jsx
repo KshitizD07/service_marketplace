@@ -109,7 +109,10 @@ export default function CustomerDashboardPage() {
           {bookings.map((b) => {
             const isCancelled = b.status === 'Cancelled';
             const isCompleted = b.status === 'Completed';
-            const isRequested = b.status === 'Requested';
+            // Allow cancel for both Requested and Confirmed (backend permits both)
+            const isCancellable = b.status === 'Requested' || b.status === 'Confirmed';
+            // BL-4: only show review button if not already reviewed
+            const canReview = isCompleted && !b.is_reviewed;
 
             return (
               <div
@@ -194,7 +197,8 @@ export default function CustomerDashboardPage() {
 
                 {/* Action Buttons */}
                 <div style={{ display: 'flex', gap: 10, marginTop: '1.2rem' }}>
-                  {isRequested && (
+                  {/* Cancel: available on Requested AND Confirmed bookings */}
+                  {isCancellable && (
                     <button
                       onClick={() => handleCancelBooking(b.id)}
                       style={{
@@ -208,11 +212,12 @@ export default function CustomerDashboardPage() {
                         cursor: 'pointer'
                       }}
                     >
-                      Cancel Request
+                      Cancel {b.status === 'Confirmed' ? 'Confirmed Booking' : 'Request'}
                     </button>
                   )}
 
-                  {isCompleted && (
+                  {/* Review: only visible for completed, not-yet-reviewed bookings */}
+                  {canReview && (
                     <button
                       onClick={() => setReviewBooking(b)}
                       style={{
