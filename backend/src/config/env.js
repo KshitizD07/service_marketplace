@@ -28,8 +28,8 @@ const env = {
   JWT_SECRET: process.env.JWT_SECRET || 'service_marketplace_secret_2026',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
 
-  // Allowed Cross-Origin Resource Sharing origin
-  CORS_ORIGIN: process.env.CORS_ORIGIN || '*'
+  // Allowed Cross-Origin Resource Sharing origin (defaults to local frontend)
+  CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173'
 };
 
 module.exports = env;
