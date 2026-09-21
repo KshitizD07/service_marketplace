@@ -91,8 +91,8 @@ const store = {
       location: "Mumbai, MH",
       experience: 6,
       hourly_rate: 499.00,
-      rating: 4.8,
-      total_reviews: 2
+      rating: 5.0,
+      total_reviews: 1
     },
     {
       id: 2,
@@ -103,7 +103,7 @@ const store = {
       location: "Pune, MH",
       experience: 8,
       hourly_rate: 350.00,
-      rating: 4.9,
+      rating: 5.0,
       total_reviews: 1
     }
   ],
@@ -113,34 +113,34 @@ const store = {
     {
       id: 1,
       provider_id: 1,
-      name: "Standard Home Clean",
-      description: "Thorough dusting, vacuuming and floor disinfection across all rooms.",
-      price: 799.00,
+      name: "Deep Home Cleaning",
+      description: "Comprehensive multi-room dusting, floor scrubbing, and sanitization.",
+      price: 1499.00,
       duration: 90
     },
     {
       id: 2,
       provider_id: 1,
-      name: "Deep Kitchen & Bath Clean",
-      description: "Degreasing, tile scrubbing and appliance sanitization.",
-      price: 1499.00,
-      duration: 150
+      name: "Kitchen Sanitization",
+      description: "Degreasing chimneys, countertop sterilization, and cabinet wiping.",
+      price: 899.00,
+      duration: 60
     },
     {
       id: 3,
       provider_id: 2,
-      name: "Electrical Safety Inspection",
-      description: "Complete panel diagnostics and safety circuit grounding check.",
+      name: "Wiring Inspection & Fix",
+      description: "Circuit breaker diagnostics, rewiring, and short circuit resolution.",
       price: 499.00,
       duration: 60
     },
     {
       id: 4,
       provider_id: 2,
-      name: "Ceiling Fan & Light Installation",
-      description: "Mounting and safe wiring for up to 3 fixtures.",
-      price: 699.00,
-      duration: 60
+      name: "Ceiling Fan & Light Fitting",
+      description: "Heavy fixture mounting, switchboard connections, and testing.",
+      price: 350.00,
+      duration: 45
     }
   ],
 
@@ -184,6 +184,19 @@ const store = {
       notes: "Switchboard sparking in master bedroom.",
       status: "Completed",
       created_at: "2026-09-08T09:00:00.000Z"
+    },
+    {
+      id: 3,
+      customer_id: 4,
+      provider_id: 1,
+      service_id: 1,
+      booking_date: "2026-09-02",
+      start_time: "09:00:00",
+      end_time: "10:30:00",
+      address: "Flat 402, Sunshine Heights, Andheri West",
+      notes: "Initial move-in sanitization and deep cleaning.",
+      status: "Completed",
+      created_at: "2026-09-01T08:00:00.000Z"
     }
   ],
 
@@ -197,6 +210,15 @@ const store = {
       rating: 5,
       comment: "Rohan arrived on time, diagnosed the short circuit in 10 minutes and repaired it safely.",
       created_at: "2026-09-10T14:30:00.000Z"
+    },
+    {
+      id: 2,
+      booking_id: 3,
+      customer_id: 4,
+      provider_id: 1,
+      rating: 5,
+      comment: "Outstanding deep cleaning! Every surface was spotless and the team was extremely polite.",
+      created_at: "2026-09-02T16:00:00.000Z"
     }
   ],
 
@@ -207,8 +229,8 @@ const store = {
     providers: 2,
     services: 4,
     availability: 9,
-    bookings: 2,
-    reviews: 1
+    bookings: 3,
+    reviews: 2
   }
 };
 
